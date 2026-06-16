@@ -57,5 +57,8 @@ def test_load_ohlcv_requests_inclusive_end(monkeypatch, tmp_path):
     today = pd.Timestamp.today().strftime("%Y-%m-%d")
     su.load_ohlcv("AAPL", today)
 
-    expected_end = (pd.Timestamp.today() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    # The cache window's end is computed on the US market clock (market_now), not
+    # the local clock, so derive the expectation the same way to stay correct
+    # regardless of the runner's timezone.
+    expected_end = (pd.Timestamp(su.market_now()) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
     assert captured["end"] == expected_end  # tomorrow -> today's row included (#986)

@@ -86,12 +86,33 @@ def build_verified_market_snapshot(
     window = max(1, min(int(look_back_days), 30))
     recent = df.tail(window)
 
+    # Flag when the requested date has no finalized daily bar yet (the session
+    # may still be open, or it is a weekend/holiday). Without this, a run made
+    # before the close — common from timezones ahead of US/Eastern — would
+    # present the prior session (e.g. Friday on a Monday) as if it were today's
+    # price. The note keeps the agent from mislabeling a stale close as current.
+    requested_ts = pd.to_datetime(curr_date, errors="coerce")
+    latest_ts = pd.to_datetime(latest["Date"], errors="coerce")
+    stale_note = None
+    if (
+        pd.notna(requested_ts)
+        and pd.notna(latest_ts)
+        and latest_ts.normalize() < requested_ts.normalize()
+    ):
+        stale_note = (
+            f"- NOTE: No finalized daily bar exists for the requested date "
+            f"({curr_date}) yet — the session may still be open, or it is a "
+            f"weekend/holiday. The latest *completed* session below is "
+            f"{latest_date}; treat it as the most recent close, not today's price."
+        )
+
     lines = [
         f"## Verified market data snapshot for {symbol.upper()}",
         "",
         f"- Requested analysis date: {curr_date}",
         f"- Latest trading row used: {latest_date}",
         "- Rows after the requested analysis date are excluded before verification.",
+        *([stale_note] if stale_note else []),
         "",
         "### Latest verified OHLCV row",
         "",

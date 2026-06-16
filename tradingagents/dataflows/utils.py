@@ -1,8 +1,15 @@
 import re
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Annotated
 
 import pandas as pd
+
+try:
+    from zoneinfo import ZoneInfo
+
+    _MARKET_TZ = ZoneInfo("America/New_York")
+except Exception:  # pragma: no cover - missing tzdata; fall back to local time
+    _MARKET_TZ = None
 
 SavePathType = Annotated[str, "File path to save data. If None, data is not saved."]
 
@@ -48,8 +55,23 @@ def save_output(data: pd.DataFrame, tag: str, save_path: SavePathType = None) ->
         print(f"{tag} saved to {save_path}")
 
 
+def market_now() -> datetime:
+    """Current time on the US market clock (America/New_York), tz-naive.
+
+    The data layer tracks "today" against the US trading calendar, not the
+    machine's local timezone. Running from a timezone hours ahead of US/Eastern
+    (e.g. Asia) otherwise advances "today" to a session that has not started,
+    so the latest finalized daily bar lags to the prior trading day (a Monday
+    run showing the previous Friday's close). Falls back to local time when the
+    IANA tz database is unavailable.
+    """
+    if _MARKET_TZ is not None:
+        return datetime.now(_MARKET_TZ).replace(tzinfo=None)
+    return datetime.now()
+
+
 def get_current_date():
-    return date.today().strftime("%Y-%m-%d")
+    return market_now().strftime("%Y-%m-%d")
 
 
 def decorate_all_methods(decorator):

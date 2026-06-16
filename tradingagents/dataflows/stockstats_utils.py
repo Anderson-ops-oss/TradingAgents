@@ -10,7 +10,7 @@ from yfinance.exceptions import YFRateLimitError
 
 from .config import get_config
 from .symbol_utils import NoMarketDataError, normalize_symbol
-from .utils import safe_ticker_component
+from .utils import market_now, safe_ticker_component
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,42 @@ def _assert_ohlcv_not_stale(
         )
 
 
+def _download_history(symbol: str, canonical: str, start_str: str, end_str: str) -> pd.DataFrame:
+    """Download the OHLCV history window, preferring EODHD when configured.
+
+    EODHD is tried first when it is in the ``core_stock_apis`` vendor chain and
+    ``EODHD_API_KEY`` is set, because it finalizes the latest completed session
+    promptly. yfinance, by contrast, can return the current/just-closed session
+    as a NaN-OHLC bar (notably for indices like ``^NDX``); that row is later
+    dropped, silently regressing the "latest" row to the prior session (a
+    Monday run showing the previous Friday). On any EODHD issue (missing key,
+    quota, empty result) this falls back to the original yfinance download, so
+    keyless/CI runs behave exactly as before.
+    """
+    vendors = str(get_config().get("data_vendors", {}).get("core_stock_apis", "")).lower()
+    if "eodhd" in vendors and os.getenv("EODHD_API_KEY"):
+        try:
+            from .eodhd import get_ohlcv_dataframe
+
+            df = get_ohlcv_dataframe(symbol, start_str, end_str)
+            if df is not None and not df.empty and "Close" in df.columns:
+                return df
+        except Exception as exc:  # noqa: BLE001 — primary's failure must not block the fallback
+            logger.warning(
+                "EODHD history fetch failed for %r; falling back to yfinance: %s", symbol, exc
+            )
+
+    downloaded = yf_retry(lambda: yf.download(
+        canonical,
+        start=start_str,
+        end=end_str,
+        multi_level_index=False,
+        progress=False,
+        auto_adjust=True,
+    ))
+    return _ensure_date_column(downloaded.reset_index())
+
+
 def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     """Fetch OHLCV data with caching, filtered to prevent look-ahead bias.
 
@@ -138,8 +174,10 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     config = get_config()
     curr_date_dt = pd.to_datetime(curr_date)
 
-    # Cache uses a fixed window (5y to today) so one file per symbol.
-    today_date = pd.Timestamp.today()
+    # Cache uses a fixed window (5y to today) so one file per symbol. "Today"
+    # is the US market date, not the machine's local date, so a run from a
+    # timezone ahead of US/Eastern doesn't request a session that hasn't begun.
+    today_date = pd.Timestamp(market_now())
     start_date = today_date - pd.DateOffset(years=5)
     start_str = start_date.strftime("%Y-%m-%d")
     # yfinance ``end`` is EXCLUSIVE; request tomorrow so today's row is included
@@ -160,22 +198,20 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     if os.path.exists(data_file):
         cached = pd.read_csv(data_file, on_bad_lines="skip", encoding="utf-8")
         if not cached.empty and "Close" in cached.columns:
-            data = cached
+            # Don't trust a cache whose latest row is a still-forming bar:
+            # yfinance returns the current, not-yet-finalized session as a
+            # Volume-only row with NaN OHLC. Serving it would silently regress
+            # the "latest" row to the prior session (a Monday run showing the
+            # previous Friday's close). Re-fetch so a finalized bar can replace
+            # it once the session closes.
+            data = None if pd.isna(cached["Close"].iloc[-1]) else cached
 
     if data is None:
-        downloaded = yf_retry(lambda: yf.download(
-            canonical,
-            start=start_str,
-            end=end_str,
-            multi_level_index=False,
-            progress=False,
-            auto_adjust=True,
-        ))
-        downloaded = _ensure_date_column(downloaded.reset_index())
+        downloaded = _download_history(symbol, canonical, start_str, end_str)
         # Only cache real data — never persist an empty frame.
-        if downloaded.empty or "Close" not in downloaded.columns:
+        if downloaded is None or downloaded.empty or "Close" not in downloaded.columns:
             raise NoMarketDataError(
-                symbol, canonical, "Yahoo Finance returned no rows"
+                symbol, canonical, "No OHLCV rows from any configured price vendor"
             )
         downloaded.to_csv(data_file, index=False, encoding="utf-8")
         data = downloaded
