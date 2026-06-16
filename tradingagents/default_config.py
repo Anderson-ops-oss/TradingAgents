@@ -102,16 +102,23 @@ DEFAULT_CONFIG = _apply_env_overrides({
     # routed to vendors you didn't choose. For ordered fallback, list several,
     # e.g. "yfinance,alpha_vantage". "default" uses all available vendors.
     "data_vendors": {
-        "core_stock_apis": "yfinance",       # Options: alpha_vantage, yfinance
-        "technical_indicators": "yfinance",  # Options: alpha_vantage, yfinance
-        "fundamental_data": "yfinance",      # Options: alpha_vantage, yfinance
-        "news_data": "yfinance",             # Options: alpha_vantage, yfinance
-        "macro_data": "fred",                # Options: fred (needs FRED_API_KEY)
-        "prediction_markets": "polymarket",  # Options: polymarket (keyless)
+        # EODHD primary for prices (finalizes the latest completed session
+        # promptly, incl. when run outside US hours), yfinance fallback.
+        "core_stock_apis": "eodhd,yfinance",       # Options: eodhd, alpha_vantage, yfinance
+        "technical_indicators": "yfinance",        # Options: alpha_vantage, yfinance
+        "fundamental_data": "yfinance",            # Options: alpha_vantage, yfinance (EODHD fundamentals are paid)
+        # Finnhub primary for news + insider data, yfinance fallback. Insider
+        # *sentiment* (get_insider_sentiment) is Finnhub-only.
+        "news_data": "finnhub,yfinance",           # Options: finnhub, alpha_vantage, yfinance
+        "macro_data": "fred",                      # Options: fred (needs FRED_API_KEY)
+        "prediction_markets": "polymarket",        # Options: polymarket (keyless)
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
+        # Earnings/estimates/calendar are Finnhub-only; the fundamental_data
+        # category default (yfinance) can't serve them, so pin the method here.
+        "get_earnings": "finnhub",
     },
     # Benchmark for alpha calculation in the reflection layer.
     # ``benchmark_ticker`` (when set) overrides the suffix map for all

@@ -11,6 +11,7 @@ You are a researcher tasked with analyzing fundamental information about a compa
 - `get_company_balance_sheet(ticker, freq, curr_date)` — balance sheet (`freq`: annual/quarterly).
 - `get_company_cashflow(ticker, freq, curr_date)` — cash-flow statement.
 - `get_company_income_statement(ticker, freq, curr_date)` — income statement.
+- `get_company_earnings(ticker, curr_date)` — recent EPS surprises (actual vs estimate), the next scheduled earnings date with EPS/revenue estimates, and the latest analyst recommendation distribution. Use this to judge earnings momentum, beat/miss track record, and the upcoming catalyst.
 
 Pull the data before asserting any figure. Make sure to append a Markdown table at the end of the report to organize key points, organized and easy to read.
 

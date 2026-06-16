@@ -24,6 +24,7 @@ EXPECTED_TOOLS = {
     "get_ticker_news",
     "get_macro_news",
     "get_company_insider_transactions",
+    "get_company_insider_sentiment",
     "get_stocktwits_messages",
     "get_reddit_posts",
     "get_macro_indicator",
@@ -32,6 +33,7 @@ EXPECTED_TOOLS = {
     "get_company_balance_sheet",
     "get_company_cashflow",
     "get_company_income_statement",
+    "get_company_earnings",
     "resolve_instrument",
     "get_realized_return",
 }

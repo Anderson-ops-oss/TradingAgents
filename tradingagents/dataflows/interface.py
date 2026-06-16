@@ -12,10 +12,18 @@ from .alpha_vantage import (
     get_stock as get_alpha_vantage_stock,
 )
 from .config import get_config
+from .eodhd import get_stock as get_eodhd_stock
 from .errors import (
     NoMarketDataError,
     VendorNotConfiguredError,
     VendorRateLimitError,
+)
+from .finnhub import (
+    get_earnings as get_finnhub_earnings,
+    get_global_news as get_finnhub_global_news,
+    get_insider_sentiment as get_finnhub_insider_sentiment,
+    get_insider_transactions as get_finnhub_insider_transactions,
+    get_news as get_finnhub_news,
 )
 from .fred import get_macro_data as get_fred_macro_data
 from .polymarket import get_prediction_markets as get_polymarket_prediction_markets
@@ -52,7 +60,8 @@ TOOLS_CATEGORIES = {
             "get_fundamentals",
             "get_balance_sheet",
             "get_cashflow",
-            "get_income_statement"
+            "get_income_statement",
+            "get_earnings"
         ]
     },
     "news_data": {
@@ -61,6 +70,7 @@ TOOLS_CATEGORIES = {
             "get_news",
             "get_global_news",
             "get_insider_transactions",
+            "get_insider_sentiment",
         ]
     },
     "macro_data": {
@@ -82,12 +92,15 @@ VENDOR_LIST = [
     "fred",
     "polymarket",
     "alpha_vantage",
+    "finnhub",
+    "eodhd",
 ]
 
 # Mapping of methods to their vendor-specific implementations
 VENDOR_METHODS = {
     # core_stock_apis
     "get_stock_data": {
+        "eodhd": get_eodhd_stock,
         "alpha_vantage": get_alpha_vantage_stock,
         "yfinance": get_YFin_data_online,
     },
@@ -115,16 +128,25 @@ VENDOR_METHODS = {
     },
     # news_data
     "get_news": {
+        "finnhub": get_finnhub_news,
         "alpha_vantage": get_alpha_vantage_news,
         "yfinance": get_news_yfinance,
     },
     "get_global_news": {
+        "finnhub": get_finnhub_global_news,
         "yfinance": get_global_news_yfinance,
         "alpha_vantage": get_alpha_vantage_global_news,
     },
     "get_insider_transactions": {
+        "finnhub": get_finnhub_insider_transactions,
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
+    },
+    "get_insider_sentiment": {
+        "finnhub": get_finnhub_insider_sentiment,
+    },
+    "get_earnings": {
+        "finnhub": get_finnhub_earnings,
     },
     # macro_data
     "get_macro_indicators": {

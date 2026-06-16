@@ -77,3 +77,23 @@ def get_income_statement(
         str: A formatted report containing income statement data
     """
     return route_to_vendor("get_income_statement", ticker, freq, curr_date)
+
+
+@tool
+def get_earnings(
+    ticker: Annotated[str, "ticker symbol"],
+    curr_date: Annotated[str | None, "current date in yyyy-mm-dd; omit for today"] = None,
+    look_back_days: Annotated[int | None, "trailing window in days; omit for the default"] = None,
+) -> str:
+    """
+    Retrieve earnings data for a given ticker symbol: recent EPS surprises
+    (actual vs estimate), the next scheduled earnings date with EPS/revenue
+    estimates, and the latest analyst recommendation distribution.
+    Args:
+        ticker (str): Ticker symbol of the company
+        curr_date (str): Current date in yyyy-mm-dd; omit for today
+        look_back_days (int): Trailing window in days; omit for the default
+    Returns:
+        str: A formatted report of earnings surprises, the next report, and analyst trend
+    """
+    return route_to_vendor("get_earnings", ticker, curr_date, look_back_days)

@@ -36,6 +36,21 @@ def _dummy_api_keys(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_live_data_vendor_keys(monkeypatch):
+    """Keep the suite hermetic for the live-by-default price/news vendors.
+
+    The package loads ``.env`` on import (``tradingagents/__init__``), and the
+    default vendor routing makes EODHD/Finnhub the primary for prices/news. A
+    developer with real keys in ``.env`` would otherwise have unit tests hit the
+    network through ``load_ohlcv`` / news routing. Remove the keys so tests
+    exercise the yfinance fallback deterministically; a live integration test
+    can set them explicitly.
+    """
+    monkeypatch.delenv("EODHD_API_KEY", raising=False)
+    monkeypatch.delenv("FINNHUB_API_KEY", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_config():
     """Reset the global dataflows config before and after each test.
 

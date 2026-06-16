@@ -11,6 +11,7 @@ from tradingagents.agents.utils.core_stock_tools import get_stock_data
 from tradingagents.agents.utils.fundamental_data_tools import (
     get_balance_sheet,
     get_cashflow,
+    get_earnings,
     get_fundamentals,
     get_income_statement,
 )
@@ -18,6 +19,7 @@ from tradingagents.agents.utils.macro_data_tools import get_macro_indicators
 from tradingagents.agents.utils.market_data_validation_tools import get_verified_market_snapshot
 from tradingagents.agents.utils.news_data_tools import (
     get_global_news,
+    get_insider_sentiment,
     get_insider_transactions,
     get_news,
 )
@@ -33,9 +35,11 @@ __all__ = [
     "get_balance_sheet",
     "get_cashflow",
     "get_income_statement",
+    "get_earnings",
     "get_news",
     "get_global_news",
     "get_insider_transactions",
+    "get_insider_sentiment",
     "get_macro_indicators",
     "get_prediction_markets",
     "get_verified_market_snapshot",

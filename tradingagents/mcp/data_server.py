@@ -31,10 +31,12 @@ from tradingagents.agents.utils.agent_utils import (  # noqa: E402  (after load_
     build_instrument_context,
     get_balance_sheet,
     get_cashflow,
+    get_earnings,
     get_fundamentals,
     get_global_news,
     get_income_statement,
     get_indicators,
+    get_insider_sentiment,
     get_insider_transactions,
     get_macro_indicators,
     get_news,
@@ -143,6 +145,25 @@ def get_company_insider_transactions(ticker: str) -> str:
         ticker: Ticker symbol of the company.
     """
     return get_insider_transactions.func(ticker)
+
+
+@mcp.tool()
+def get_company_insider_sentiment(
+    ticker: str, curr_date: str | None = None, look_back_days: int | None = None
+) -> str:
+    """Retrieve aggregated monthly insider sentiment for a company.
+
+    Returns monthly net insider share change and MSPR (Monthly Share Purchase
+    Ratio: positive = net insider buying, negative = net selling) — the
+    SEDI-style aggregated insider-sentiment signal, distinct from raw
+    transaction rows. Requires FINNHUB_API_KEY.
+
+    Args:
+        ticker: Ticker symbol of the company.
+        curr_date: Window end date in yyyy-mm-dd; omit for today.
+        look_back_days: Trailing window in days; omit for a ~1-year window.
+    """
+    return get_insider_sentiment.func(ticker, curr_date, look_back_days)
 
 
 @mcp.tool()
@@ -263,6 +284,22 @@ def get_company_income_statement(
         curr_date: Current trading date in yyyy-mm-dd format.
     """
     return get_income_statement.func(ticker, freq, curr_date)
+
+
+@mcp.tool()
+def get_company_earnings(
+    ticker: str, curr_date: str | None = None, look_back_days: int | None = None
+) -> str:
+    """Retrieve earnings data for a ticker: recent EPS surprises (actual vs
+    estimate), the next scheduled earnings date with EPS/revenue estimates, and
+    the latest analyst recommendation distribution. Requires FINNHUB_API_KEY.
+
+    Args:
+        ticker: Ticker symbol of the company.
+        curr_date: Current trading date in yyyy-mm-dd format; omit for today.
+        look_back_days: Trailing window in days; omit for the default.
+    """
+    return get_earnings.func(ticker, curr_date, look_back_days)
 
 
 # --------------------------------------------------------------------------- #
