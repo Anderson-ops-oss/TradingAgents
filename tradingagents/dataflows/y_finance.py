@@ -95,6 +95,12 @@ def get_stock_stats_indicators_window(
             "Usage: Capture quick shifts in momentum and potential entry points. "
             "Tips: Prone to noise in choppy markets; use alongside longer averages for filtering false signals."
         ),
+        "supertrend": (
+            "Supertrend: An ATR-based trend-following overlay. "
+            "Usage: Price above the line = uptrend (line acts as trailing support); below = downtrend "
+            "(trailing resistance); a flip signals a trend change. "
+            "Tips: Whipsaws in sideways markets; pair with a momentum or trend-strength filter."
+        ),
         # MACD Related
         "macd": (
             "MACD: Computes momentum via differences of EMAs. "
@@ -116,6 +122,42 @@ def get_stock_stats_indicators_window(
             "RSI: Measures momentum to flag overbought/oversold conditions. "
             "Usage: Apply 70/30 thresholds and watch for divergence to signal reversals. "
             "Tips: In strong trends, RSI may remain extreme; always cross-check with trend analysis."
+        ),
+        "stochrsi": (
+            "Stochastic RSI: Applies the stochastic formula to RSI for a faster overbought/oversold "
+            "oscillator (0-100). Usage: >80 overbought, <20 oversold; watch K/D crosses. "
+            "Tips: Very sensitive and noisy — confirm with trend; redundant with plain RSI, do not stack both."
+        ),
+        "kdjk": (
+            "KDJ (K line): A stochastic-derived momentum oscillator. "
+            "Usage: K/D crossovers and J-line extremes flag momentum shifts and potential reversals. "
+            "Tips: Fast and prone to false signals in choppy markets; confirm with trend."
+        ),
+        "wr": (
+            "Williams %R: A momentum oscillator (-100 to 0) for overbought/oversold. "
+            "Usage: above -20 overbought, below -80 oversold; divergence flags reversals. "
+            "Tips: Leading but noisy; confirm with trend and volume."
+        ),
+        "cci": (
+            "CCI: Commodity Channel Index, deviation of price from its moving average. "
+            "Usage: >+100 strong up / possible overbought, <-100 strong down / possible oversold; "
+            "zero-line crosses mark momentum shifts. Tips: Unbounded — read with trend context."
+        ),
+        "trix": (
+            "TRIX: A triple-EMA-smoothed momentum oscillator that filters out noise. "
+            "Usage: Zero-line and signal-line crosses flag trend momentum; divergence warns of reversals. "
+            "Tips: Lagging by design — best for confirmation, not precise timing."
+        ),
+        # Trend Strength / Directional
+        "adx": (
+            "ADX: Average Directional Index measures trend STRENGTH (not direction), 0-100. "
+            "Usage: >25 = trending (trend-following works), <20 = choppy/range (favor mean-reversion). "
+            "Tips: Directionless on its own — read alongside price/+DI/-DI for the trend's direction."
+        ),
+        "aroon": (
+            "Aroon: Gauges how recently price set an N-day high vs low (-100 to 100). "
+            "Usage: Strongly positive = established uptrend, strongly negative = downtrend, "
+            "near zero = consolidation. Tips: Good for spotting new trends/breakouts; lags fast reversals."
         ),
         # Volatility Indicators
         "boll": (
@@ -148,6 +190,11 @@ def get_stock_stats_indicators_window(
             "MFI: The Money Flow Index is a momentum indicator that uses both price and volume to measure buying and selling pressure. "
             "Usage: Identify overbought (>80) or oversold (<20) conditions and confirm the strength of trends or reversals. "
             "Tips: Use alongside RSI or MACD to confirm signals; divergence between price and MFI can indicate potential reversals."
+        ),
+        "vr": (
+            "Volume Ratio (VR): Compares volume on up days vs down days. "
+            "Usage: Confirms whether a price move is backed by volume; extreme readings can flag exhaustion. "
+            "Tips: Interpret relative to the asset's own recent range, not a fixed absolute threshold."
         ),
     }
 

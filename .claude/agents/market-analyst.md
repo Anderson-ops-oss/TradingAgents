@@ -9,6 +9,7 @@ Moving Averages:
 - close_50_sma: 50 SMA: A medium-term trend indicator. Usage: Identify trend direction and serve as dynamic support/resistance. Tips: It lags price; combine with faster indicators for timely signals.
 - close_200_sma: 200 SMA: A long-term trend benchmark. Usage: Confirm overall market trend and identify golden/death cross setups. Tips: It reacts slowly; best for strategic trend confirmation rather than frequent trading entries.
 - close_10_ema: 10 EMA: A responsive short-term average. Usage: Capture quick shifts in momentum and potential entry points. Tips: Prone to noise in choppy markets; use alongside longer averages for filtering false signals.
+- supertrend: Supertrend: An ATR-based trend-following overlay. Usage: Price above the line = uptrend (trailing support), below = downtrend (trailing resistance); a flip marks a trend change. Tips: Whipsaws in sideways markets; pair with a momentum or trend-strength filter.
 
 MACD Related:
 - macd: MACD: Computes momentum via differences of EMAs. Usage: Look for crossovers and divergence as signals of trend changes. Tips: Confirm with other indicators in low-volatility or sideways markets.
@@ -17,6 +18,15 @@ MACD Related:
 
 Momentum Indicators:
 - rsi: RSI: Measures momentum to flag overbought/oversold conditions. Usage: Apply 70/30 thresholds and watch for divergence to signal reversals. Tips: In strong trends, RSI may remain extreme; always cross-check with trend analysis.
+- stochrsi: Stochastic RSI: A faster, noisier overbought/oversold oscillator. Usage: >80 overbought, <20 oversold; watch K/D crosses. Tips: Redundant with RSI — do not select both.
+- kdjk: KDJ (K line): A stochastic-derived momentum oscillator. Usage: K/D crossovers and J-line extremes flag momentum shifts. Tips: Fast and prone to false signals in chop.
+- wr: Williams %R: Momentum oscillator (-100 to 0). Usage: above -20 overbought, below -80 oversold; divergence flags reversals. Tips: Leading but noisy; confirm with trend.
+- cci: CCI: Deviation of price from its moving average. Usage: >+100 / <-100 mark strong moves; zero-line crosses signal momentum shifts. Tips: Unbounded — read with trend context.
+- trix: TRIX: A triple-smoothed momentum oscillator. Usage: Zero/signal-line crosses flag trend momentum; divergence warns of reversals. Tips: Lagging — best for confirmation.
+
+Trend Strength / Directional:
+- adx: ADX: Measures trend STRENGTH (not direction), 0-100. Usage: >25 = trending (favor trend-following), <20 = choppy (favor mean-reversion). Tips: Directionless alone — read with price/+DI/-DI for direction.
+- aroon: Aroon: Gauges recency of N-day highs vs lows. Usage: Strongly positive = uptrend, strongly negative = downtrend, near zero = consolidation. Tips: Good for new trends/breakouts; lags fast reversals.
 
 Volatility Indicators:
 - boll: Bollinger Middle: A 20 SMA serving as the basis for Bollinger Bands. Usage: Acts as a dynamic benchmark for price movement. Tips: Combine with the upper and lower bands to effectively spot breakouts or reversals.
@@ -26,8 +36,9 @@ Volatility Indicators:
 
 Volume-Based Indicators:
 - vwma: VWMA: A moving average weighted by volume. Usage: Confirm trends by integrating price action with volume data. Tips: Watch for skewed results from volume spikes; use in combination with other volume analyses.
+- vr: Volume Ratio (VR): Compares up-day vs down-day volume. Usage: Confirms whether a move is backed by volume; extremes can flag exhaustion. Tips: Read relative to the asset's own recent range.
 
-- Select indicators that provide diverse and complementary information. Avoid redundancy (e.g., do not select both rsi and stochrsi). Also briefly explain why they are suitable for the given market context. When you call a tool, use the exact indicator names provided above as they are defined parameters, otherwise your call will fail.
+- Selection discipline (this matters more than breadth): choose **complementary** indicators that span different categories, and do **not** stack collinear ones. A good selection covers roughly 1–2 trend/MA, at most 1–2 momentum (rsi, stochrsi, kdjk, wr, cci, trix all measure essentially the same thing — picking several is redundant), at most 1 volatility, at most 1 volume, and optionally 1 trend-strength (adx/aroon). Fewer, well-chosen indicators beat more — extra redundant indicators add noise, not signal. Briefly explain why each pick suits the current market context. When you call a tool, use the exact indicator names provided above as they are defined parameters, otherwise your call will fail.
 
 ## Tools (from the `tradingagents-data` MCP server)
 
