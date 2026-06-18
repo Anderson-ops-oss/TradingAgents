@@ -89,6 +89,19 @@ const instrumentContext = (
 const dateLine = `The current trading date is ${tradeDate}.`
 const anchor = `${instrumentContext}\n${dateLine}`
 
+// Caveat-preservation rules injected into every downstream reasoning agent. The
+// reports are full-text but labels (period/basis) and caveats get stripped as
+// figures are paraphrased through the debate -> manager -> trader -> risk -> PM
+// funnel — which is how a stale FY figure or an adjusted-basis "miss" hardens into
+// an asserted fact. These rules forbid that hardening at every hop.
+const GROUNDING_RULES =
+  'GROUNDING RULES (mandatory):\n' +
+  '- Every quantitative claim you state or repeat MUST keep the period and basis label the source gave it (e.g. "Q1 2026", "FY2025 annual", "TTM", "GAAP", "adjusted/non-GAAP"). Never strip these labels.\n' +
+  '- Never harden a caveated or adjusted figure into an unqualified fact. If a source flags an EPS surprise as adjusted/non-GAAP while the GAAP/headline quarter was a beat, you may NOT call it simply a "miss" — state both bases.\n' +
+  '- Do not present a trailing-twelve-month (TTM) or prior fiscal-year figure as the company\'s current/latest value when a more recent reported period exists.\n' +
+  '- Price and indicator levels MUST carry their as-of (close) date. Never present a prior-session or stale close as the current/today\'s price; if the snapshot reports no finalized bar for the trading date (weekend/holiday/open session), say so explicitly.\n' +
+  '- If a figure reaching you carries no period/basis label, treat it as UNVERIFIED — flag it as such rather than asserting it as fact, and do not let it drive the decision.'
+
 // --------------------------------------------------------------------------- //
 // Phase: Analysts (parallel). Each calls the MCP data tools and returns a report.
 // --------------------------------------------------------------------------- //
@@ -135,7 +148,7 @@ for (let i = 0; i < totalDebateTurns; i++) {
   const oppLabel = isBull ? "bear's last argument" : "bull's last argument"
   const roundNo = Math.floor(i / 2) + 1
   const out = await agent(
-    `${anchor}\n\nResources (analyst reports):\n${reportsBlock}\n\n` +
+    `${anchor}\n\n${GROUNDING_RULES}\n\nResources (analyst reports):\n${reportsBlock}\n\n` +
       `Conversation history of the debate so far:\n${debateHistory || '(none yet)'}\n\n` +
       `The ${oppLabel}:\n${lastDebateArg || '(none yet — open the case)'}\n\nDeliver your argument now.`,
     { agentType: role, label: `${isBull ? 'bull' : 'bear'}:r${roundNo}`, phase: 'Debate' },
@@ -146,7 +159,7 @@ for (let i = 0; i < totalDebateTurns; i++) {
 }
 
 const planObj = await agent(
-  `${instrumentContext}\n\nEvaluate this debate and deliver a clear, actionable investment plan for the trader.\n\n` +
+  `${instrumentContext}\n\n${GROUNDING_RULES}\n\nEvaluate this debate and deliver a clear, actionable investment plan for the trader.\n\n` +
     `Debate History:\n${debateHistory}`,
   { agentType: 'research-manager', label: 'research-manager', phase: 'Debate', schema: RESEARCH_PLAN_SCHEMA },
 )
@@ -163,7 +176,7 @@ const investmentPlan = [
 // --------------------------------------------------------------------------- //
 phase('Trade')
 const traderObj = await agent(
-  `${anchor}\n\nHere is the investment plan tailored for ${ticker}:\n\n${investmentPlan}\n\n` +
+  `${anchor}\n\n${GROUNDING_RULES}\n\nHere is the investment plan tailored for ${ticker}:\n\n${investmentPlan}\n\n` +
     `Analyst reports for reference:\n${reportsBlock}\n\nMake your transaction decision now.`,
   { agentType: 'trader', label: 'trader', phase: 'Trade', schema: TRADER_SCHEMA },
 )
@@ -194,7 +207,7 @@ for (let i = 0; i < totalRiskTurns; i++) {
   const role = RISK_ORDER[i % 3]
   const roundNo = Math.floor(i / 3) + 1
   const out = await agent(
-    `${anchor}\n\nAnalyst reports:\n${reportsBlock}\n\nThe trader's decision:\n${traderPlan}\n\n` +
+    `${anchor}\n\n${GROUNDING_RULES}\n\nAnalyst reports:\n${reportsBlock}\n\nThe trader's decision:\n${traderPlan}\n\n` +
       `Current conversation history:\n${riskHistory || '(none yet)'}\n\n` +
       `Last aggressive argument: ${lastAgg || '(none)'}\n` +
       `Last conservative argument: ${lastCon || '(none)'}\n` +
@@ -214,7 +227,7 @@ for (let i = 0; i < totalRiskTurns; i++) {
 phase('Decision')
 const lessonsBlock = pastContext ? `Lessons from prior decisions and outcomes:\n${pastContext}\n\n` : ''
 const pmObj = await agent(
-  `${instrumentContext}\n\nSynthesize the risk analysts' debate and deliver the final trading decision.\n\n` +
+  `${instrumentContext}\n\n${GROUNDING_RULES}\n\nSynthesize the risk analysts' debate and deliver the final trading decision.\n\n` +
     `Research Manager's investment plan:\n${investmentPlan}\n\n` +
     `Trader's transaction proposal:\n${traderPlan}\n\n` +
     `${lessonsBlock}Risk Analysts Debate History:\n${riskHistory}`,

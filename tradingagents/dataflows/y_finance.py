@@ -14,6 +14,60 @@ from .stockstats_utils import (
 )
 from .symbol_utils import NoMarketDataError, normalize_symbol
 
+# A quarterly report lags its fiscal-period end by a filing delay, so an ANNUAL
+# statement can be up to ~5 months stale relative to the latest 10-Q. Beyond this
+# bound a newer quarter almost certainly exists; the recency note below uses it so
+# an agent never presents a fiscal-year figure as the company's *current* balance
+# sheet months later (root cause of the JPM Q1'26 staleness bug).
+_QUARTER_FRESH_DAYS = 135
+
+
+def _financials_period_note(data, freq, curr_date):
+    """Build a recency/period header for a yfinance financial-statement frame.
+
+    yfinance statement columns are fiscal-period end dates. We surface the latest
+    period present and, for annual statements, warn that a more recent quarterly
+    report likely exists — so a December fiscal-year figure is never reported as
+    the 'current' balance sheet half a year later."""
+    try:
+        periods = pd.to_datetime(data.columns, errors="coerce").dropna()
+        if len(periods) == 0:
+            return ""
+        latest = max(periods)
+        latest_str = latest.strftime("%Y-%m-%d")
+    except Exception:
+        return ""
+
+    age_days = None
+    if curr_date:
+        try:
+            age_days = (pd.Timestamp(curr_date) - latest).days
+        except Exception:
+            age_days = None
+
+    note = f"# Latest period in this statement: {latest_str} ({freq})\n"
+    if freq.lower() == "annual":
+        note += (
+            f"# RECENCY WARNING: this is the latest ANNUAL report (fiscal year-end "
+            f"{latest_str}). As of {curr_date or 'now'} a more recent QUARTERLY report "
+            f'may exist — call this tool with freq="quarterly" for the company\'s '
+            f"current figures. Do NOT present these annual numbers as the latest/current "
+            f"balance sheet; label every figure as '{latest.year} annual'.\n"
+        )
+    elif age_days is not None and age_days > _QUARTER_FRESH_DAYS:
+        note += (
+            f"# RECENCY WARNING: the most recent quarterly period available is "
+            f"{latest_str}, ~{age_days} days before {curr_date}. A newer quarter may "
+            f"not be reported yet; label figures with this period and do not assume "
+            f"they are fully current.\n"
+        )
+    else:
+        note += (
+            f"# Label every figure from this statement with its period (e.g. "
+            f"'{latest_str}') — do not present it as undated 'current' data.\n"
+        )
+    return note
+
 
 def get_YFin_data_online(
     symbol: Annotated[str, "ticker symbol of the company"],
@@ -349,17 +403,17 @@ def get_fundamentals(
             ("50 Day Average", info.get("fiftyDayAverage")),
             ("200 Day Average", info.get("twoHundredDayAverage")),
             ("Revenue (TTM)", info.get("totalRevenue")),
-            ("Gross Profit", info.get("grossProfits")),
-            ("EBITDA", info.get("ebitda")),
-            ("Net Income", info.get("netIncomeToCommon")),
-            ("Profit Margin", info.get("profitMargins")),
-            ("Operating Margin", info.get("operatingMargins")),
-            ("Return on Equity", info.get("returnOnEquity")),
-            ("Return on Assets", info.get("returnOnAssets")),
-            ("Debt to Equity", info.get("debtToEquity")),
-            ("Current Ratio", info.get("currentRatio")),
-            ("Book Value", info.get("bookValue")),
-            ("Free Cash Flow", info.get("freeCashflow")),
+            ("Gross Profit (TTM)", info.get("grossProfits")),
+            ("EBITDA (TTM)", info.get("ebitda")),
+            ("Net Income (TTM, to common)", info.get("netIncomeToCommon")),
+            ("Profit Margin (TTM)", info.get("profitMargins")),
+            ("Operating Margin (TTM)", info.get("operatingMargins")),
+            ("Return on Equity (TTM)", info.get("returnOnEquity")),
+            ("Return on Assets (TTM)", info.get("returnOnAssets")),
+            ("Debt to Equity (MRQ)", info.get("debtToEquity")),
+            ("Current Ratio (MRQ)", info.get("currentRatio")),
+            ("Book Value/sh (MRQ)", info.get("bookValue")),
+            ("Free Cash Flow (TTM)", info.get("freeCashflow")),
         ]
 
         lines = []
@@ -375,7 +429,14 @@ def get_fundamentals(
             raise NoMarketDataError(ticker, canonical, "no fundamental fields returned")
 
         header = f"# Company Fundamentals for {canonical}\n"
-        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        header += (
+            "# BASIS NOTE: figures tagged (TTM) are trailing-twelve-month / current-\n"
+            "# snapshot metrics from yfinance, NOT a single quarter. A TTM ratio (ROE,\n"
+            "# ROA, margins) can differ materially from the latest quarter's annualized\n"
+            "# figure; (MRQ) = most-recent-quarter balance-sheet item. For the latest\n"
+            "# reported period use the quarterly statement tools and lead with that period.\n\n"
+        )
 
         return header + "\n".join(lines)
 
@@ -410,6 +471,7 @@ def get_balance_sheet(
 
         # Add header information
         header = f"# Balance Sheet data for {canonical} ({freq})\n"
+        header += _financials_period_note(data, freq, curr_date)
         header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
         return header + csv_string
@@ -445,6 +507,7 @@ def get_cashflow(
 
         # Add header information
         header = f"# Cash Flow data for {canonical} ({freq})\n"
+        header += _financials_period_note(data, freq, curr_date)
         header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
         return header + csv_string
@@ -480,6 +543,7 @@ def get_income_statement(
 
         # Add header information
         header = f"# Income Statement data for {canonical} ({freq})\n"
+        header += _financials_period_note(data, freq, curr_date)
         header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
         return header + csv_string

@@ -239,6 +239,16 @@ def get_earnings(symbol: str, curr_date: str | None = None, look_back_days: int 
                 f"| {r.get('period', '')} | {r.get('quarter', '')} | {r.get('actual', '')} "
                 f"| {r.get('estimate', '')} | {r.get('surprise', '')} | {sp_str} |"
             )
+        lines += [
+            "",
+            "> **BASIS CAVEAT (read before characterizing any quarter):** Finnhub's Actual /",
+            "> Estimate / Surprise figures are on a normalized/adjusted (often non-GAAP) basis and",
+            "> can differ materially from GAAP reported EPS — e.g. they may exclude one-time",
+            "> securities gains/charges. A small negative surprise here does NOT by itself mean the",
+            '> company "missed": the GAAP/headline result for the same quarter may be a large beat.',
+            '> Before calling a quarter a "beat" or "miss", corroborate against the income statement',
+            "> (reported EPS) and revenue, and report BOTH bases (with labels) whenever they diverge.",
+        ]
     else:
         lines.append("No earnings-surprise history reported.")
 
